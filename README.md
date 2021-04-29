@@ -6,7 +6,6 @@ API capabilities: This notification microservice will be responsible for communi
 # Get it running
 The first time you want to get the application started you must enter the project's folder, optionally initiate a virtual environment, and then run these commands to prepare usage of the flask framework.
     pip install flask
-    pip install Flask-Mail
     set FLASK_APP=notifications/app.py 
 
 Then, whenever you want to get the microservice running, run this command:
