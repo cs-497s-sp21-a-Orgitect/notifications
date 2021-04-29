@@ -5,7 +5,7 @@ API capabilities: This notification microservice will be responsible for communi
 - sendNotification(customerID)
 
 # Get it running
-The first time you want to get the application started you must enter the project's folder and specify the file you wish to run using the flask engine. Enter these command:
+The first time you want to get the application started you must enter the project's folder, optionally initiate a virtual environment, and then run these commands to prepare usage of the flask framework.
     pip install flask
     pip install Flask-Mail
     set FLASK_APP=notifications/app.py 
@@ -13,7 +13,7 @@ The first time you want to get the application started you must enter the projec
 Then, whenever you want to get the microservice running, run this command:
     FLASK run
 
-If you'd like to use GMail as your SMTP server then you'll be requird to lower the account security or you may be barred from sending emails usin the account you indicate.
+Note that when assigning the credentials for the message to be sent that if you're going to use GMail then you'll likely be requird to lower the account security.
 
 # Example GET requests:
 http://127.0.0.1:5000/api/notifications/all

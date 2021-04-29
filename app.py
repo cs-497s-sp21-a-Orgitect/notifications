@@ -4,12 +4,12 @@ from flask_mail import Mail, Message
 app = Flask(__name__)
 app.config["DEBUG"] = True
 
-# Mail server info, for later sending of notifications.
+# Mail server info. Will be used to send notification through email.
 app.config['MAIL_SERVER']='smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USERNAME'] = 'yourId@gmail.com'       # Theoretically change this to your email address!
 app.config['MAIL_PASSWORD'] = '*****'                  # Theoretically change this to your password!
-app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_TLS'] = False  # setting to true highly increases security
 app.config['MAIL_USE_SSL'] = True
 mail = Mail(app)
 
@@ -64,8 +64,8 @@ def addNotification(uid, email, message, time_sent):
         # exc_type, exc_value, exc_tb = sys.exc_info()
         # print(traceback.format_exception(exc_type, exc_value, exc_tb))
     
+    # close connection/cursor 
     finally:
-        # close connection/cursor 
         if liteConnection:
             liteConnection.close()
 
@@ -78,14 +78,22 @@ def home():
 # Handles showing all of the notifications in the database. Impractical, but useful for testing.
 @app.route('/api/notifications/all', methods=['GET'])
 def api_all():
-    liteConnection = sqlite3.connect('notifications.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
-    getCursor = liteConnection.cursor()
-    all_notifications = getCursor.execute('SELECT * FROM notifications;').fetchall()
-    # TO-DO: Include try-catch. Make sure to CLOSE the liteConnection.
-    if liteConnection:
-        liteConnection.close()
-    return jsonify(all_notifications)
+    try:
+        liteConnection = sqlite3.connect('notifications.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
+        getCursor = liteConnection.cursor()
+        all_notifications = getCursor.execute('SELECT * FROM notifications;').fetchall()
+        # TO-DO: Include try-catch. Make sure to CLOSE the liteConnection.
+        if liteConnection:
+            liteConnection.close()
+        return jsonify(all_notifications)
 
+    except sqlite3.Error as errorMessage:
+        print("Error while getting ALL notifications,", errorMessage)
+
+    # close connection/cursor 
+    finally:
+        if liteConnection:
+            liteConnection.close()
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -94,53 +102,66 @@ def page_not_found(e):
 
 @app.route('/api/notifications', methods=['GET'])
 def api_filter():
-    # retrieve indicated query parameters from the URL
-    query_params = request.args
-    uid = query_params.get('uid')
-    email = query_params.get('email')
+    try:
+        # retrieve indicated query parameters from the URL
+        query_params = request.args
+        uid = query_params.get('uid')
+        email = query_params.get('email')
 
-    query = "SELECT * FROM notifications WHERE"
-    filters = []
+        query = "SELECT * FROM notifications WHERE"
+        filters = []
 
-    # Check which filters it has, or throw an error if none.
-    if uid:
-        query += ' uid=? AND'
-        filters.append(uid)
-    if email:
-        query += ' email=? AND'
-        filters.append(email)
-    if not (id or email):
-        return page_not_found(404)
-    query = query[:-4] + ';'    # get rid of the potential trailing AND, end with semicolon to fulfill sqLite format.
+        # Check which filters it has, or throw an error if none.
+        if uid:
+            query += ' uid=? AND'
+            filters.append(uid)
+        if email:
+            query += ' email=? AND'
+            filters.append(email)
+        if not (id or email):
+            return page_not_found(404)
+        query = query[:-4] + ';'    # get rid of the potential trailing AND, end with semicolon to fulfill sqLite format.
 
-    # Run indicated query on the object that interacts with sqLite and return the JSON format of results found.
-    liteConnection = sqlite3.connect('notifications.db')
-    queryCursor = liteConnection.cursor()
-    results = queryCursor.execute(query, filters).fetchall()
-    return jsonify(results)
+        # Run indicated query on the object that interacts with sqLite and return the JSON format of results found.
+        liteConnection = sqlite3.connect('notifications.db')
+        queryCursor = liteConnection.cursor()
+        results = queryCursor.execute(query, filters).fetchall()
+        return jsonify(results)
+
+    except sqlite3.Error as errorMessage:
+        print("Error while getting FILTERED notifications,", errorMessage)
+
+    # close connection/cursor 
+    finally:
+        if liteConnection:
+            liteConnection.close()
 
 # Receive Post request from the Actors microservice (Yidan) here
 @app.route('/api/notifications', methods=['POST'])
 def addNewNotificiation():
-    # break the JSON file down into necessary values
-    request_data = request.get_json()
-    name = request_data['name'] # Email address holder's name
-    uid = request_data['uid']   # Email address holder's unique customer ID
-    message = request_data['message']   # Message to be sent to Email address holder
-    time_sent = datetime.datetime.now() # Time of send request
-    
-    # Make get request to the Customers microservice (Efosa) here
-    url = 'localhost:3000/api/notification'
-    params = uid    # The only parameter to be passed in is the customer ID, aka uid
-    email = request.get(url, { params })
+    try:
+        # break the JSON file down into necessary values
+        request_data = request.get_json()
+        name = request_data['name'] # Email address holder's name
+        uid = request_data['uid']   # Email address holder's unique customer ID
+        message = request_data['message']   # Message to be sent to Email address holder
+        time_sent = datetime.datetime.now() # Time of send request
+        
+        # Make get request to the Customers microservice (Efosa) here
+        url = 'localhost:3000/api/notification'
+        params = uid    # The only parameter to be passed in is the customer ID, aka uid
+        email = request.get(url, { params })
 
-    # Send notification/email via Flask
-    flaskMsg = Message('Hello', sender = 'yourId@gmail.com', recipients = [email])
-    flaskMsg.body = message
-    mail.send(flaskMsg)
+        # Send notification/email via Flask
+        flaskMsg = Message('Hello', sender = 'yourId@gmail.com', recipients = [email])
+        flaskMsg.body = message
+        mail.send(flaskMsg)
 
-    # Add email details to the  notifications database via the addNotification() function
-    addNotification(uid, email, message, time_sent)
+        # Add email details to the  notifications database via the addNotification() function
+        addNotification(uid, email, message, time_sent)
+
+    except sqlite3.Error as errorMessage:
+        print("Error while getting sending notification,", errorMessage)
 
 """
 # Dummy Data
