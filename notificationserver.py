@@ -1,12 +1,14 @@
 import sqlite3
 import datetime
+import sys
+import traceback
 
 def createTable():
     try:
-        print("Creating table process")
+        # print("Creating table process")
         # liteConnection = sqlite3.connect(":memory:")    # exists strictly in memory, not in a file
         liteConnection = sqlite3.connect('notifications.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
-        print("Total changes", liteConnection.total_changes) # test connection
+        # print("Total changes", liteConnection.total_changes) # test connection
 
         # Cursor for sqLite interaction
         creationCursor = liteConnection.cursor()    # might swap to sqliteConnection.cursor()
@@ -55,6 +57,10 @@ def addNotification(uid, email, message, time_sent): # TO-DO: rename datetime to
 
     except sqlite3.Error as errorMessage:
         print("Error while inserting new notification,", errorMessage)
+        # print("\nException class is: ", errorMessage.__class__," \nException is", errorMessage.args)
+        # print('Printing detailed SQLite exception traceback: ')
+        # exc_type, exc_value, exc_tb = sys.exc_info()
+        # print(traceback.format_exception(exc_type, exc_value, exc_tb))
     
     finally:    # """Close cursor & connection objects."""
         if liteConnection:
