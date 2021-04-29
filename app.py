@@ -1,28 +1,25 @@
-# Note, to run this flask file first:
-# set FLASK_APP=notifications/app.py
-# FLASK run
-# Example query searches.
-# http://127.0.0.1:5000/api/notifications/all
-# http://127.0.0.1:5000/api/notifications?uid=123
-# http://127.0.0.1:5000/api/notifications?email=efosa@umass.edu
-
-import flask
+import sqlite3, sys, datetime, traceback, flask, smtplib, flask_mail
 from flask import request, jsonify, Flask
-import sqlite3
-import datetime
-import sys
-import traceback
+from flask_mail import Mail, Message
 app = Flask(__name__)
 app.config["DEBUG"] = True
 
+# Mail server info, for later sending of notifications.
+app.config['MAIL_SERVER']='smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USERNAME'] = 'yourId@gmail.com'       # Theoretically change this to your email address!
+app.config['MAIL_PASSWORD'] = '*****'                  # Theoretically change this to your password!
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USE_SSL'] = True
+mail = Mail(app)
+
+# Creates the notifications database
 def createTable():
     try:
         liteConnection = sqlite3.connect('notifications.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
-
-        # Cursor for sqLite interaction
         creationCursor = liteConnection.cursor()
         
-        # Table creation query
+        # Table creation query string, executed through the cursor object that interacts with the sqLite database
         creation_query = "CREATE TABLE notifications (uid INTEGER, email VARCHAR(100), messages TEXT, time_sent TIMESTAMP);"
         creationCursor.execute(creation_query)
         print("Table created\n")
@@ -35,8 +32,8 @@ def createTable():
         if liteConnection:
             liteConnection.close()
 
-
-def addNotification(uid, email, message, time_sent): # TO-DO: rename datetime to timestamp, follow through changes
+# Add new notifications to the database given the body info, recipient's user id, recipient email's address, and the date/time of sending
+def addNotification(uid, email, message, time_sent):
     try:
         liteConnection = sqlite3.connect('notifications.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
         # print("\nTotal changes: ", liteConnection.total_changes) # test connection
@@ -72,11 +69,13 @@ def addNotification(uid, email, message, time_sent): # TO-DO: rename datetime to
         if liteConnection:
             liteConnection.close()
 
+# "Main Page" of Microservice. Essentially a pretty placeholder.
 @app.route('/', methods=['GET'])
 def home():
     return "<h1>Notification Microservice</h1><p>This site is a prototype API for the Notifications microservice of project Orgitect.</p>"
 
 
+# Handles showing all of the notifications in the database. Impractical, but useful for testing.
 @app.route('/api/notifications/all', methods=['GET'])
 def api_all():
     liteConnection = sqlite3.connect('notifications.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
@@ -120,6 +119,7 @@ def api_filter():
     results = queryCursor.execute(query, filters).fetchall()
     return jsonify(results)
 
+# Receive Post request from the Actors microservice (Yidan) here
 @app.route('/api/notifications', methods=['POST'])
 def addNewNotificiation():
     # break the JSON file down into necessary values
@@ -129,10 +129,17 @@ def addNewNotificiation():
     message = request_data['message']   # Message to be sent to Email address holder
     time_sent = datetime.datetime.now() # Time of send request
     
-    # Make the get request to Efosa here
+    # Make get request to the Customers microservice (Efosa) here
     url = 'localhost:3000/api/notification'
-    params = uid    # The only parameter to be passed in is the customer ID, aka uid.
+    params = uid    # The only parameter to be passed in is the customer ID, aka uid
     email = request.get(url, { params })
+
+    # Send notification/email via Flask
+    flaskMsg = Message('Hello', sender = 'yourId@gmail.com', recipients = [email])
+    flaskMsg.body = message
+    mail.send(flaskMsg)
+
+    # Add email details to the  notifications database via the addNotification() function
     addNotification(uid, email, message, time_sent)
 
 """
