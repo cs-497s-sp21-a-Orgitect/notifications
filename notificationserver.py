@@ -11,7 +11,7 @@ def createTable():
         # print("Total changes", liteConnection.total_changes) # test connection
 
         # Cursor for sqLite interaction
-        creationCursor = liteConnection.cursor()    # might swap to sqliteConnection.cursor()
+        creationCursor = liteConnection.cursor()
         
         # Table creation query
         creation_query = "CREATE TABLE notifications (uid INTEGER, email VARCHAR(100), messages TEXT, time_sent TIMESTAMP);"
@@ -62,11 +62,12 @@ def addNotification(uid, email, message, time_sent): # TO-DO: rename datetime to
         # exc_type, exc_value, exc_tb = sys.exc_info()
         # print(traceback.format_exception(exc_type, exc_value, exc_tb))
     
-    finally:    # """Close cursor & connection objects."""
+    finally:
+        # close connection/cursor 
         if liteConnection:
             liteConnection.close()
-            # rows = cursor.execute("SELECT 1").fetchall()    # Test they are closed by a statement that should return 1. TO-DO: Verify fluency.
-            # print(rows)
+    
+
 
 createTable()
 addNotification(453, 'efosa@umass.edu', 'Hey cutie call me at 1-800-CARS-FOR-KIDS', datetime.datetime.now())
