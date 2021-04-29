@@ -1,19 +1,7 @@
-import sqlite3, sys, datetime, traceback, flask, smtplib#, flask_mail
+import sqlite3, sys, datetime, traceback, flask, smtplib
 from flask import request, jsonify, Flask
-# from flask_mail import Mail, Message
 app = Flask(__name__)
 app.config["DEBUG"] = True
-
-# Mail server info. Will be used to send notification through email.
-"""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-app.config['MAIL_SERVER']='smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USERNAME'] = 'yourId@gmail.com'       # Theoretically change this to your email address!
-app.config['MAIL_PASSWORD'] = '*****'                  # Theoretically change this to your password!
-app.config['MAIL_USE_TLS'] = False  # setting to true highly increases security
-app.config['MAIL_USE_SSL'] = True
-mail = Mail(app)
-"""
 
 # Creates the notifications database
 def createTable():
@@ -33,6 +21,7 @@ def createTable():
     finally:
         if liteConnection:
             liteConnection.close()
+
 
 # Add new notifications to the database given the body info, recipient's user id, recipient email's address, and the date/time of sending
 def addNotification(uid, email, message, time_sent):
@@ -61,15 +50,12 @@ def addNotification(uid, email, message, time_sent):
 
     except sqlite3.Error as errorMessage:
         print("Error while inserting new notification,", errorMessage)
-        # print("\nException class is: ", errorMessage.__class__," \nException is", errorMessage.args)
-        # print('Printing detailed SQLite exception traceback: ')
-        # exc_type, exc_value, exc_tb = sys.exc_info()
-        # print(traceback.format_exception(exc_type, exc_value, exc_tb))
     
-    # close connection/cursor 
+    # close connection/cursor objects
     finally:
         if liteConnection:
             liteConnection.close()
+
 
 # "Main Page" of Microservice. Essentially a pretty placeholder.
 @app.route('/', methods=['GET'])
@@ -96,6 +82,7 @@ def api_all():
     finally:
         if liteConnection:
             liteConnection.close()
+
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -138,6 +125,7 @@ def api_filter():
         if liteConnection:
             liteConnection.close()
 
+
 # Receive Post request from the Actors microservice (Yidan) here
 @app.route('/api/notifications', methods=['POST'])
 def addNewNotificiation():
@@ -154,19 +142,20 @@ def addNewNotificiation():
         params = uid    # The only parameter to be passed in is the customer ID, aka uid
         email = request.get(url, { params })
 
-        # Send notification/email via Flask
-        """~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        flaskMsg = Message('Hello', sender = 'yourId@gmail.com', recipients = [email])
-        flaskMsg.body = message
-        mail.send(flaskMsg)
-        """
+        # Send notification/email via smtp import
+        try:
+            smtpObject = smtplib.SMTP('localhost')
+            smtpObject.sendmail('orgitectnotification@gmail.com', email, message)         
+            print ("Sent notification successfully")
+
+        except Exception:
+            print ("Error. Unable to send email notification.")
 
         # Add email details to the  notifications database via the addNotification() function
         addNotification(uid, email, message, time_sent)
 
     except sqlite3.Error as errorMessage:
         print("Error while getting sending notification,", errorMessage)
-
 """
 # Dummy Data
 createTable()
