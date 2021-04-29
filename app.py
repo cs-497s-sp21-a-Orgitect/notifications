@@ -1,10 +1,11 @@
-import sqlite3, sys, datetime, traceback, flask, smtplib, flask_mail
+import sqlite3, sys, datetime, traceback, flask, smtplib#, flask_mail
 from flask import request, jsonify, Flask
-from flask_mail import Mail, Message
+# from flask_mail import Mail, Message
 app = Flask(__name__)
 app.config["DEBUG"] = True
 
 # Mail server info. Will be used to send notification through email.
+"""~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 app.config['MAIL_SERVER']='smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USERNAME'] = 'yourId@gmail.com'       # Theoretically change this to your email address!
@@ -12,6 +13,7 @@ app.config['MAIL_PASSWORD'] = '*****'                  # Theoretically change th
 app.config['MAIL_USE_TLS'] = False  # setting to true highly increases security
 app.config['MAIL_USE_SSL'] = True
 mail = Mail(app)
+"""
 
 # Creates the notifications database
 def createTable():
@@ -153,9 +155,11 @@ def addNewNotificiation():
         email = request.get(url, { params })
 
         # Send notification/email via Flask
+        """~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         flaskMsg = Message('Hello', sender = 'yourId@gmail.com', recipients = [email])
         flaskMsg.body = message
         mail.send(flaskMsg)
+        """
 
         # Add email details to the  notifications database via the addNotification() function
         addNotification(uid, email, message, time_sent)
