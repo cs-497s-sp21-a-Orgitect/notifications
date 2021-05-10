@@ -118,7 +118,7 @@ def api_filter():
         return jsonify(results)
 
     except sqlite3.Error as errorMessage:
-        print("Error while getting FILTERED notifications,", errorMessage)
+        print("Error while getting FILTERED notifications.", errorMessage)
 
     # close connection/cursor 
     finally:
@@ -126,13 +126,19 @@ def api_filter():
             liteConnection.close()
 
 
+
+""" Yidan's Function
+    def complete_stage(cid:int):
+    data={'uid':cid,'message':'Process is over'}
+    s=request.post('localhost:3000/api/notification',data)
+    return s
+"""
 # Receive Post request from the Actors microservice (Yidan) here
 @app.route('/api/notifications', methods=['POST'])
 def addNewNotificiation():
     try:
         # break the JSON file down into necessary values
         request_data = request.get_json()
-        name = request_data['name'] # Email address holder's name
         uid = request_data['uid']   # Email address holder's unique customer ID
         message = request_data['message']   # Message to be sent to Email address holder
         time_sent = datetime.datetime.now() # Time of send request
@@ -156,11 +162,50 @@ def addNewNotificiation():
 
     except sqlite3.Error as errorMessage:
         print("Error while getting sending notification,", errorMessage)
+
+@app.route('/api/notifications', methods=['PATCH'])
+def updateEmail(uid, newEmail):
+    liteConnection = sqlite3.connect('notifications.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
+    cursor = liteConnection.cursor()
+    print("Cursor open, connected to SQLite")
+
+    # Update email belonging to indicated user
+    update_query = "UPDATE 'notifications' SET 'email' = ? WHERE uid = ?;"
+    update_tuple = (uid, newEmail)
+    cursor.execute(update_query, update_tuple)
+    liteConnection.commit()
+    print("Successfully commited new notification")
+
+    # Close the cursor object
+    cursor.close()
+
+@app.route('/api/notifications', methods=['DELETE'])
+def deleteUserAndEmails(uid):
+    liteConnection = sqlite3.connect('notifications.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
+    cursor = liteConnection.cursor()
+    print("Cursor open, connected to SQLite")
+
+    # Remove notification objects belonging to indicated uid, delete_query = "DELETE FROM 'notifications' WHERE uid = ?;", []
+    cursor.execute("DELETE FROM 'notifications' WHERE uid = ?", [888])
+    liteConnection.commit()
+    print("Successfully deleted notifications.")
+    cursor.close()
+
+# addNotification(888, 'joseph.edu', 'I dislike birds. Thoroughly.', datetime.datetime.now())
+# deleteUserAndEmails("888")
 """
 # Dummy Data
 createTable()
+addNotification(777, 'yidan@umass.edu', 'I dislike birds. Thoroughly.', datetime.datetime.now())
+addNotification(777, 'yidan@umass.edu', 'I dislike birds. Thoroughly.', datetime.datetime.now())
 addNotification(453, 'efosa@umass.edu', 'Hey cutie call me at 1-800-CARS-FOR-KIDS', datetime.datetime.now())
 addNotification(123, 'chris@umass.edu', 'Big black hole, long black hair, WWWWWAAAAA', datetime.datetime.now())
 addNotification(453, 'efosa@umass.edu', 'I bet you still play Runescape', datetime.datetime.now())
 addNotification(453, 'efosa@umass.edu', 'Do you kiss your mother with that mouth?', datetime.datetime.now())
+
+Demo URLs
+http://127.0.0.1:5000/api/notifications/
+http://127.0.0.1:5000/api/notifications/all
+http://127.0.0.1:5000/api/notifications?uid=777
+http://127.0.0.1:5000/api/notifications?email=efosa@umass.edu
 """
