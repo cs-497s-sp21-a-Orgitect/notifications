@@ -125,8 +125,6 @@ def api_filter():
         if liteConnection:
             liteConnection.close()
 
-
-
 """ Yidan's Function
     def complete_stage(cid:int):
     data={'uid':cid,'message':'Process is over'}
@@ -165,34 +163,49 @@ def addNewNotificiation():
 
 @app.route('/api/notifications', methods=['PATCH'])
 def updateEmail(uid, newEmail):
-    liteConnection = sqlite3.connect('notifications.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
-    cursor = liteConnection.cursor()
-    print("Cursor open, connected to SQLite")
+    try:
+        liteConnection = sqlite3.connect('notifications.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
+        cursor = liteConnection.cursor()
+        print("Cursor open, connected to SQLite")
 
-    # Update email belonging to indicated user
-    update_query = "UPDATE 'notifications' SET 'email' = ? WHERE uid = ?;"
-    update_tuple = (uid, newEmail)
-    cursor.execute(update_query, update_tuple)
-    liteConnection.commit()
-    print("Successfully commited new notification")
+        # Update email belonging to indicated user
+        update_query = "UPDATE 'notifications' SET 'email' = ? WHERE uid = ?;"
+        update_tuple = (uid, newEmail)
+        cursor.execute(update_query, update_tuple)
+        liteConnection.commit()
+        print("Successfully commited new notification")
+        cursor.close()
 
-    # Close the cursor object
-    cursor.close()
+    except sqlite3.Error as errorMessage:
+        print("Error while updating email in notifications database.", errorMessage)
+
+    finally:
+        if liteConnection:
+            liteConnection.close()
 
 @app.route('/api/notifications', methods=['DELETE'])
-def deleteUserAndEmails(uid):
-    liteConnection = sqlite3.connect('notifications.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
-    cursor = liteConnection.cursor()
-    print("Cursor open, connected to SQLite")
+def deleteUserMessages(uid):
+    try:
+        liteConnection = sqlite3.connect('notifications.db', detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
+        cursor = liteConnection.cursor()
+        print("Cursor open, connected to SQLite")
 
-    # Remove notification objects belonging to indicated uid, delete_query = "DELETE FROM 'notifications' WHERE uid = ?;", []
-    cursor.execute("DELETE FROM 'notifications' WHERE uid = ?", [888])
-    liteConnection.commit()
-    print("Successfully deleted notifications.")
-    cursor.close()
+        # Remove notification objects belonging to indicated uid, delete_query = "DELETE FROM 'notifications' WHERE uid = ?;", []
+        cursor.execute("DELETE FROM 'notifications' WHERE uid = ?", [888])
+        liteConnection.commit()
+        print("Successfully deleted notifications.")
+        cursor.close()
 
+    except sqlite3.Error as errorMessage:
+        print("Error while deleting user's notifications from database.", errorMessage)
+
+    finally:
+        if liteConnection:
+            liteConnection.close()
+            
 # addNotification(888, 'joseph.edu', 'I dislike birds. Thoroughly.', datetime.datetime.now())
-# deleteUserAndEmails("888")
+# deleteUserMessages("888")
+
 """
 # Dummy Data
 createTable()
